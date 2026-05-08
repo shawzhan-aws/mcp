@@ -41,16 +41,8 @@ class ObservabilityAdminTools:
     def register(self, mcp):
         """Register all Observability Admin tools with the MCP server."""
         mcp.tool(name='get_telemetry_evaluation_status')(self.get_telemetry_evaluation_status)
-        mcp.tool(name='start_telemetry_evaluation')(self.start_telemetry_evaluation)
-        mcp.tool(name='stop_telemetry_evaluation')(self.stop_telemetry_evaluation)
         mcp.tool(name='get_telemetry_evaluation_status_for_organization')(
             self.get_telemetry_evaluation_status_for_organization
-        )
-        mcp.tool(name='start_telemetry_evaluation_for_organization')(
-            self.start_telemetry_evaluation_for_organization
-        )
-        mcp.tool(name='stop_telemetry_evaluation_for_organization')(
-            self.stop_telemetry_evaluation_for_organization
         )
         mcp.tool(name='list_resource_telemetry')(self.list_resource_telemetry)
         mcp.tool(name='list_telemetry_rules')(self.list_telemetry_rules)
@@ -102,96 +94,6 @@ class ObservabilityAdminTools:
             await ctx.error(f'Error getting telemetry evaluation status: {str(e)}')
             raise
 
-    async def start_telemetry_evaluation(
-        self,
-        ctx: Context,
-        region: Annotated[
-            Optional[str],
-            Field(
-                description='AWS region to query. Defaults to AWS_REGION environment variable or us-east-1 if not set.'
-            ),
-        ] = None,
-        profile_name: Annotated[
-            Optional[str],
-            Field(
-                description='AWS CLI Profile Name to use for AWS access. Falls back to AWS_PROFILE environment variable if not specified, or uses default AWS credential chain.'
-            ),
-        ] = None,
-    ) -> TelemetryEvaluationStatusResponse:
-        """Begins onboarding the caller's AWS account to the telemetry config feature.
-
-        This enables CloudWatch to discover and audit telemetry configurations across
-        resources in the account. This is a free feature with no additional charges.
-        See https://docs.aws.amazon.com/cloudwatch/latest/monitoring/telemetry-config.html
-
-        IMPORTANT: This is a mutating operation. Before calling this tool, confirm with
-        the user that they want to enable telemetry evaluation for their account.
-
-        For a single account, evaluation typically becomes available almost immediately.
-        After starting, use get_telemetry_evaluation_status to check progress.
-        Use stop_telemetry_evaluation to disable it later if needed.
-
-        Returns:
-            TelemetryEvaluationStatusResponse: The status after initiating evaluation.
-        """
-        try:
-            client = get_aws_client('observabilityadmin', region, profile_name)
-            client.start_telemetry_evaluation()
-
-            # Fetch status after starting
-            response = client.get_telemetry_evaluation_status()
-            return TelemetryEvaluationStatusResponse(
-                status=response.get('Status', 'STARTING'),
-                failure_reason=response.get('FailureReason'),
-            )
-        except Exception as e:
-            logger.error(f'Error in start_telemetry_evaluation: {str(e)}')
-            await ctx.error(f'Error starting telemetry evaluation: {str(e)}')
-            raise
-
-    async def stop_telemetry_evaluation(
-        self,
-        ctx: Context,
-        region: Annotated[
-            Optional[str],
-            Field(
-                description='AWS region to query. Defaults to AWS_REGION environment variable or us-east-1 if not set.'
-            ),
-        ] = None,
-        profile_name: Annotated[
-            Optional[str],
-            Field(
-                description='AWS CLI Profile Name to use for AWS access. Falls back to AWS_PROFILE environment variable if not specified, or uses default AWS credential chain.'
-            ),
-        ] = None,
-    ) -> TelemetryEvaluationStatusResponse:
-        """Stops the telemetry config feature for the caller's AWS account.
-
-        This disables CloudWatch telemetry configuration discovery and auditing.
-        After stopping, use get_telemetry_evaluation_status to confirm the feature
-        has been stopped.
-
-        IMPORTANT: This is a mutating operation. Before calling this tool, confirm with
-        the user that they want to disable telemetry evaluation for their account.
-
-        Returns:
-            TelemetryEvaluationStatusResponse: The status after stopping evaluation.
-        """
-        try:
-            client = get_aws_client('observabilityadmin', region, profile_name)
-            client.stop_telemetry_evaluation()
-
-            # Fetch status after stopping
-            response = client.get_telemetry_evaluation_status()
-            return TelemetryEvaluationStatusResponse(
-                status=response.get('Status', 'STOPPING'),
-                failure_reason=response.get('FailureReason'),
-            )
-        except Exception as e:
-            logger.error(f'Error in stop_telemetry_evaluation: {str(e)}')
-            await ctx.error(f'Error stopping telemetry evaluation: {str(e)}')
-            raise
-
     async def get_telemetry_evaluation_status_for_organization(
         self,
         ctx: Context,
@@ -227,98 +129,6 @@ class ObservabilityAdminTools:
         except Exception as e:
             logger.error(f'Error in get_telemetry_evaluation_status_for_organization: {str(e)}')
             await ctx.error(f'Error getting organization telemetry evaluation status: {str(e)}')
-            raise
-
-    async def start_telemetry_evaluation_for_organization(
-        self,
-        ctx: Context,
-        region: Annotated[
-            Optional[str],
-            Field(
-                description='AWS region to query. Defaults to AWS_REGION environment variable or us-east-1 if not set.'
-            ),
-        ] = None,
-        profile_name: Annotated[
-            Optional[str],
-            Field(
-                description='AWS CLI Profile Name to use for AWS access. Falls back to AWS_PROFILE environment variable if not specified, or uses default AWS credential chain.'
-            ),
-        ] = None,
-    ) -> TelemetryEvaluationStatusResponse:
-        """Begins onboarding the organization and all member accounts to the telemetry config feature.
-
-        Can only be called by the organization's management account or a delegated
-        administrator account. This is a free feature with no additional charges.
-        See https://docs.aws.amazon.com/cloudwatch/latest/monitoring/telemetry-config.html
-
-        IMPORTANT: This is a mutating operation. Before calling this tool, confirm with
-        the user that they want to enable telemetry evaluation for their organization.
-
-        Onboarding time depends on organization size: a single account is nearly instant,
-        while large organizations with thousands of accounts may take 20-30 minutes.
-        After starting, use get_telemetry_evaluation_status_for_organization to check progress.
-        Use stop_telemetry_evaluation_for_organization to disable it later if needed.
-
-        Returns:
-            TelemetryEvaluationStatusResponse: The status after initiating organization evaluation.
-        """
-        try:
-            client = get_aws_client('observabilityadmin', region, profile_name)
-            client.start_telemetry_evaluation_for_organization()
-
-            # Fetch status after starting
-            response = client.get_telemetry_evaluation_status_for_organization()
-            return TelemetryEvaluationStatusResponse(
-                status=response.get('Status', 'STARTING'),
-                failure_reason=response.get('FailureReason'),
-            )
-        except Exception as e:
-            logger.error(f'Error in start_telemetry_evaluation_for_organization: {str(e)}')
-            await ctx.error(f'Error starting organization telemetry evaluation: {str(e)}')
-            raise
-
-    async def stop_telemetry_evaluation_for_organization(
-        self,
-        ctx: Context,
-        region: Annotated[
-            Optional[str],
-            Field(
-                description='AWS region to query. Defaults to AWS_REGION environment variable or us-east-1 if not set.'
-            ),
-        ] = None,
-        profile_name: Annotated[
-            Optional[str],
-            Field(
-                description='AWS CLI Profile Name to use for AWS access. Falls back to AWS_PROFILE environment variable if not specified, or uses default AWS credential chain.'
-            ),
-        ] = None,
-    ) -> TelemetryEvaluationStatusResponse:
-        """Stops the telemetry config feature for the organization and all member accounts.
-
-        Can only be called by the organization's management account or a delegated
-        administrator account. After stopping, use
-        get_telemetry_evaluation_status_for_organization to confirm the feature
-        has been stopped.
-
-        IMPORTANT: This is a mutating operation. Before calling this tool, confirm with
-        the user that they want to disable telemetry evaluation for their organization.
-
-        Returns:
-            TelemetryEvaluationStatusResponse: The status after stopping organization evaluation.
-        """
-        try:
-            client = get_aws_client('observabilityadmin', region, profile_name)
-            client.stop_telemetry_evaluation_for_organization()
-
-            # Fetch status after stopping
-            response = client.get_telemetry_evaluation_status_for_organization()
-            return TelemetryEvaluationStatusResponse(
-                status=response.get('Status', 'STOPPING'),
-                failure_reason=response.get('FailureReason'),
-            )
-        except Exception as e:
-            logger.error(f'Error in stop_telemetry_evaluation_for_organization: {str(e)}')
-            await ctx.error(f'Error stopping organization telemetry evaluation: {str(e)}')
             raise
 
     async def list_resource_telemetry(
@@ -366,10 +176,9 @@ class ObservabilityAdminTools:
         """Returns telemetry configurations for AWS resources in the account.
 
         Lists the telemetry state (Logs, Metrics, Traces) for resources like EC2 instances,
-        Lambda functions, EKS clusters, etc. Requires telemetry evaluation to be running
-        (use start_telemetry_evaluation first if needed). For a single account, evaluation
-        is typically available almost immediately after starting. Use
-        get_telemetry_evaluation_status to verify the status is RUNNING before querying.
+        Lambda functions, EKS clusters, etc. Requires telemetry evaluation to be running.
+        For a single account, evaluation is typically available almost immediately after starting.
+        Use get_telemetry_evaluation_status to verify the status is RUNNING before querying.
 
         Usage: Use this to audit which resources have telemetry enabled or disabled,
         identify observability gaps, and verify monitoring coverage.

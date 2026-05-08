@@ -45,15 +45,11 @@ class TestRegistration:
         mock_mcp = Mock()
         tools.register(mock_mcp)
 
-        assert mock_mcp.tool.call_count == 12
+        assert mock_mcp.tool.call_count == 8
         tool_names = [call[1]['name'] for call in mock_mcp.tool.call_args_list]
         expected = [
             'get_telemetry_evaluation_status',
-            'start_telemetry_evaluation',
-            'stop_telemetry_evaluation',
             'get_telemetry_evaluation_status_for_organization',
-            'start_telemetry_evaluation_for_organization',
-            'stop_telemetry_evaluation_for_organization',
             'list_resource_telemetry',
             'list_telemetry_rules',
             'get_telemetry_rule',
@@ -127,37 +123,6 @@ class TestGetTelemetryEvaluationStatus:
 
 
 @pytest.mark.asyncio
-class TestStartTelemetryEvaluation:
-    """Tests for start_telemetry_evaluation."""
-
-    async def test_success(self, mock_context, oa_tools):
-        """Test test_success."""
-        mock_client = Mock()
-        mock_client.start_telemetry_evaluation.return_value = {}
-        mock_client.get_telemetry_evaluation_status.return_value = {'Status': 'STARTING'}
-        with patch(
-            'awslabs.cloudwatch_mcp_server.observability_admin.tools.get_aws_client',
-            return_value=mock_client,
-        ):
-            result = await oa_tools.start_telemetry_evaluation(mock_context)
-
-        assert result.status == 'STARTING'
-        mock_client.start_telemetry_evaluation.assert_called_once()
-
-    async def test_api_error(self, mock_context, oa_tools):
-        """Test test_api_error."""
-        mock_client = Mock()
-        mock_client.start_telemetry_evaluation.side_effect = Exception('Access denied')
-        with patch(
-            'awslabs.cloudwatch_mcp_server.observability_admin.tools.get_aws_client',
-            return_value=mock_client,
-        ):
-            with pytest.raises(Exception, match='Access denied'):
-                await oa_tools.start_telemetry_evaluation(mock_context)
-        mock_context.error.assert_called_once()
-
-
-@pytest.mark.asyncio
 class TestGetTelemetryEvaluationStatusForOrganization:
     """Tests for get_telemetry_evaluation_status_for_organization."""
 
@@ -187,41 +152,6 @@ class TestGetTelemetryEvaluationStatusForOrganization:
         ):
             with pytest.raises(Exception, match='Not a management account'):
                 await oa_tools.get_telemetry_evaluation_status_for_organization(mock_context)
-        mock_context.error.assert_called_once()
-
-
-@pytest.mark.asyncio
-class TestStartTelemetryEvaluationForOrganization:
-    """Tests for start_telemetry_evaluation_for_organization."""
-
-    async def test_success(self, mock_context, oa_tools):
-        """Test test_success."""
-        mock_client = Mock()
-        mock_client.start_telemetry_evaluation_for_organization.return_value = {}
-        mock_client.get_telemetry_evaluation_status_for_organization.return_value = {
-            'Status': 'STARTING',
-        }
-        with patch(
-            'awslabs.cloudwatch_mcp_server.observability_admin.tools.get_aws_client',
-            return_value=mock_client,
-        ):
-            result = await oa_tools.start_telemetry_evaluation_for_organization(mock_context)
-
-        assert result.status == 'STARTING'
-        mock_client.start_telemetry_evaluation_for_organization.assert_called_once()
-
-    async def test_api_error(self, mock_context, oa_tools):
-        """Test test_api_error."""
-        mock_client = Mock()
-        mock_client.start_telemetry_evaluation_for_organization.side_effect = Exception(
-            'Org error'
-        )
-        with patch(
-            'awslabs.cloudwatch_mcp_server.observability_admin.tools.get_aws_client',
-            return_value=mock_client,
-        ):
-            with pytest.raises(Exception, match='Org error'):
-                await oa_tools.start_telemetry_evaluation_for_organization(mock_context)
         mock_context.error.assert_called_once()
 
 
@@ -706,70 +636,4 @@ class TestGetTelemetryRuleForOrganization:
                 await oa_tools.get_telemetry_rule_for_organization(
                     mock_context, rule_identifier='nonexistent'
                 )
-        mock_context.error.assert_called_once()
-
-
-@pytest.mark.asyncio
-class TestStopTelemetryEvaluation:
-    """Tests for stop_telemetry_evaluation."""
-
-    async def test_success(self, mock_context, oa_tools):
-        """Test test_success."""
-        mock_client = Mock()
-        mock_client.stop_telemetry_evaluation.return_value = {}
-        mock_client.get_telemetry_evaluation_status.return_value = {'Status': 'STOPPING'}
-        with patch(
-            'awslabs.cloudwatch_mcp_server.observability_admin.tools.get_aws_client',
-            return_value=mock_client,
-        ):
-            result = await oa_tools.stop_telemetry_evaluation(mock_context)
-
-        assert result.status == 'STOPPING'
-        mock_client.stop_telemetry_evaluation.assert_called_once()
-
-    async def test_api_error(self, mock_context, oa_tools):
-        """Test test_api_error."""
-        mock_client = Mock()
-        mock_client.stop_telemetry_evaluation.side_effect = Exception('Cannot stop')
-        with patch(
-            'awslabs.cloudwatch_mcp_server.observability_admin.tools.get_aws_client',
-            return_value=mock_client,
-        ):
-            with pytest.raises(Exception, match='Cannot stop'):
-                await oa_tools.stop_telemetry_evaluation(mock_context)
-        mock_context.error.assert_called_once()
-
-
-@pytest.mark.asyncio
-class TestStopTelemetryEvaluationForOrganization:
-    """Tests for stop_telemetry_evaluation_for_organization."""
-
-    async def test_success(self, mock_context, oa_tools):
-        """Test test_success."""
-        mock_client = Mock()
-        mock_client.stop_telemetry_evaluation_for_organization.return_value = {}
-        mock_client.get_telemetry_evaluation_status_for_organization.return_value = {
-            'Status': 'STOPPING',
-        }
-        with patch(
-            'awslabs.cloudwatch_mcp_server.observability_admin.tools.get_aws_client',
-            return_value=mock_client,
-        ):
-            result = await oa_tools.stop_telemetry_evaluation_for_organization(mock_context)
-
-        assert result.status == 'STOPPING'
-        mock_client.stop_telemetry_evaluation_for_organization.assert_called_once()
-
-    async def test_api_error(self, mock_context, oa_tools):
-        """Test test_api_error."""
-        mock_client = Mock()
-        mock_client.stop_telemetry_evaluation_for_organization.side_effect = Exception(
-            'Org stop error'
-        )
-        with patch(
-            'awslabs.cloudwatch_mcp_server.observability_admin.tools.get_aws_client',
-            return_value=mock_client,
-        ):
-            with pytest.raises(Exception, match='Org stop error'):
-                await oa_tools.stop_telemetry_evaluation_for_organization(mock_context)
         mock_context.error.assert_called_once()
