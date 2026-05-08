@@ -82,8 +82,20 @@ RUN_STATUSES = [
     RUN_STATUS_CANCELLED,
 ]
 
+# Workflow engine types
+WORKFLOW_ENGINES = ['WDL', 'NEXTFLOW', 'CWL', 'WDL_LENIENT']
+
+# Accelerator types
+ACCELERATOR_TYPE_GPU = 'GPU'
+ACCELERATOR_TYPES = [ACCELERATOR_TYPE_GPU]
+
+# Workflow types for GetWorkflow
+GET_WORKFLOW_TYPES = ['PRIVATE', 'READY2RUN']
+
 # Export types
 EXPORT_TYPE_DEFINITION = 'DEFINITION'
+EXPORT_TYPE_README = 'README'
+EXPORT_TYPES = [EXPORT_TYPE_DEFINITION, EXPORT_TYPE_README]
 
 # Agent identification
 AGENT_ENV = 'AGENT'
@@ -189,6 +201,10 @@ S3_STORAGE_CLASS_GLACIER_IR = 'GLACIER_IR'
 
 # Error messages
 
+ERROR_INVALID_ENGINE = 'Invalid engine. Must be one of: {}'
+ERROR_INVALID_ACCELERATOR = 'Invalid accelerator. Must be one of: {}'
+ERROR_INVALID_WORKFLOW_TYPE = 'Invalid workflow type. Must be one of: {}'
+ERROR_INVALID_EXPORT_TYPE = 'Invalid export type. Must be one of: {}'
 ERROR_INVALID_STORAGE_TYPE = 'Invalid storage type. Must be one of: {}'
 ERROR_INVALID_CACHE_BEHAVIOR = 'Invalid cache behavior. Must be one of: {}'
 ERROR_INVALID_RUN_STATUS = 'Invalid run status. Must be one of: {}'
@@ -308,3 +324,35 @@ ERROR_BATCH_NOT_DELETABLE = 'Batch cannot be deleted. Status must be one of: {}'
 ERROR_INVALID_BATCH_RUN_SETTINGS = (
     'batchRunSettings must contain either inlineSettings or s3UriSettings, but not both'
 )
+
+# Networking modes
+NETWORKING_MODE_RESTRICTED = 'RESTRICTED'
+NETWORKING_MODE_VPC = 'VPC'
+NETWORKING_MODES = [NETWORKING_MODE_RESTRICTED, NETWORKING_MODE_VPC]
+
+# Configuration statuses
+CONFIGURATION_STATUS_CREATING = 'CREATING'
+CONFIGURATION_STATUS_ACTIVE = 'ACTIVE'
+CONFIGURATION_STATUS_DELETING = 'DELETING'
+CONFIGURATION_STATUS_DELETED = 'DELETED'
+CONFIGURATION_STATUSES = [
+    CONFIGURATION_STATUS_CREATING,
+    CONFIGURATION_STATUS_ACTIVE,
+    CONFIGURATION_STATUS_DELETING,
+    CONFIGURATION_STATUS_DELETED,
+]
+
+# Configuration constraints
+CONFIGURATION_NAME_MAX_LENGTH = 50
+RESERVED_CONFIGURATION_NAMES = ['default']
+
+# Error messages for configuration and networking operations
+ERROR_INVALID_NETWORKING_MODE = 'Invalid networking mode. Must be one of: {}'
+ERROR_VPC_MODE_REQUIRES_CONFIGURATION_NAME = (
+    'configuration_name is required when networking_mode is VPC'
+)
+ERROR_CONFIGURATION_NAME_REQUIRES_VPC_MODE = (
+    'configuration_name requires networking_mode to be VPC'
+)
+ERROR_RESERVED_CONFIGURATION_NAME = "Configuration name '{}' is reserved and cannot be used"
+ERROR_CONFIGURATION_NAME_TOO_LONG = 'Configuration name exceeds maximum length of {} characters'
